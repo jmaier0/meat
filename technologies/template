@@ -1,0 +1,20 @@
+.PARAM supp=1.2V
+.PARAM vbVal='supp' loadVal=0.002p
+
+.LIB <path to library> 
+
+.subckt pmos VDD VGG VSS VBB
+<paramters for pmos>
+.ends pmos
+
+.subckt nmos VDD VGG VSS VBB
+<paramters for nmos>
+.ends nmos
+
+.subckt pmos_weak VDD VGG VSS VBB
+<paramters for weak pmos>
+.ends pmos_weak
+
+.subckt nmos_weak VDD VGG VSS VBB
+<paramters for weak pmos>
+.ends nmos_weak

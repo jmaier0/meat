@@ -30,8 +30,8 @@ TECH_FOLDER='../technologies/'
 DIR_NAME=''
 SPICE_COMMAND='hspice'
 
-DVOUT_COUNT_VIN=1000 # how many different input voltage values to use
-DVOUT_COUNT_VOUT=4000 # how many different output voltage values to use
+DVOUT_COUNT_VIN=100 # how many different input voltage values to use
+DVOUT_COUNT_VOUT=100 # how many different output voltage values to use
 HYSTERESIS_COUNT_MULT=1 # multiplicative factor how many more input voltage values
    # to use during the hysteresis
 
@@ -499,8 +499,8 @@ def get_meta(name):
                  'vin;vout\n')
               
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 # delivers data for hysteresis, i.e., all the truly stable states
+
 def get_hysteresis(name):
 
     start_time = time.time()
@@ -520,7 +520,7 @@ def get_hysteresis(name):
         if not os.path.isfile(spiceFileName[:-3]+'.sw0'):
         
             cmd = "sed -e 's/<sed>start<sed>/%s/' -e 's/<sed>stop<sed>/%s/' -e 's/<sed>steps<sed>/%s/' "\
-                %(data[1],data[2], HYSTERESIS_COUNT) + fileName  + " > "  + spiceFileName
+                %(data[1],data[2], HYSTERESIS_COUNT_MULT*DVOUT_COUNT_VIN) + fileName  + " > "  + spiceFileName
             code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
 
             if (code != 0):
@@ -655,7 +655,7 @@ def get_dVout_dt(name):
     write_csv_2D(data, 'dVout_dt')
 
     print_info("starting generation of matlab file")
-    cmd = "matlab -r 'plot_dVout '%s' '%s'; quit' -nodisplay"\
+    cmd = "matlab -r 'plot_dVout_dt '%s' '%s'; quit' -nodisplay"\
             %(DATA_FOLDER + DIR_NAME, FIG_FOLDER + DIR_NAME[:-1] + '_')
     code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
 
@@ -752,7 +752,7 @@ def get_meta_dVout_dt(circuit):
 
     #-----------------------------------------------------------------
 
-    print_info("get_meta_dVout took %s seconds"%(time.time()-start_time))
+    print_info("get_meta_dVout_dt took %s seconds"%(time.time()-start_time))
     
     plt.figure()
     plt.plot(oneOverTau[0], oneOverTau[1], 'b-')
@@ -762,8 +762,8 @@ def get_meta_dVout_dt(circuit):
     plt.ylabel('1/tau')
     plt.savefig(FIG_FOLDER+DIR_NAME[:-1]+'_tau_dVout_dt.png')
 
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'metaDVoutDt.csv', metaPoints, 'vin; vmeta\n');
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'metaDVoutDtTau.csv', oneOverTau, 'vin; 1/tau\n');
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'metaDVoutDt.csv', metaPoints, 'vin; vmeta; vmeta_up; vmeta_down\n');
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'metaDVoutDtTau.csv', oneOverTau, 'vin; 1/tau\n');
     
     print_info("analytic calculation of metastable voltages done")
 
@@ -860,8 +860,8 @@ def get_meta_trans(circuit):
     plt.ylabel('1/tau')
     plt.savefig(FIG_FOLDER+DIR_NAME[:-1]+'_tau_trans.png')
 
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'metaTrans.csv', metaPoints, 'vin; vmeta\n');
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'metaTransTau.csv', oneOverTau, 'vin; 1/tau\n');
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'metaTrans.csv', metaPoints, 'vin; vmeta; vmeta_up; vmeta_down\n');
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'metaTransTau.csv', oneOverTau, 'vin; 1/tau\n');
     
     print_info("determining metastable voltages by transients done")
 
@@ -986,7 +986,7 @@ def get_meta_dc(circuit):
     print_info("get_meta_dc took %s seconds"%(time.time()-start_time))
         
     data = read_hspice(spiceFileName[:-3]+'.sw0',2)
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'metaDC.csv', data, 'vin; vmeta\n');
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'metaDC.csv', data, 'vin; vmeta\n');
 
     print_info("metastable dc analysis done")
 
@@ -1049,7 +1049,7 @@ def get_loop_amplification(circuit):
         amps[0].append(vin)
         amps[1].append(10**(amp/20))
 
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'amp.csv', amps, 'vin; amplification\n');
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'amp.csv', amps, 'vin; amplification\n');
 
     print_info("get_loop_amplification took %s seconds"%(time.time()-start_time))
 
@@ -1110,7 +1110,7 @@ def get_loop_amplification_vin(circuit):
         amps[0].append(vout)
         amps[1].append(10**(amp/20))
 
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'amp_%s.csv'%stringVin, amps, 'vin; amp\n');
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'amp_%s.csv'%stringVin, amps, 'vin; amp\n');
 
     print_info("get_loop_amplification_vin took %s seconds"%(time.time()-start_time))
     
@@ -1176,7 +1176,7 @@ def evaluate_meta(circuit):
     while abs(meta[metaIdx][0] -metaDVout[0][0]) > 1e-8:
         metaIdx+= 1
 
-    measured = meta[metaIdx:-1:HYSTERESIS_COUNT/DVOUT_COUNT_VIN]
+    measured = meta[metaIdx:-1:HYSTERESIS_COUNT_MULT]
     
     outDeviation = [ [], [], [], [], [] ]
     fileName = CIRCUIT_FOLDER + circuit + '/eval.sp'
@@ -1206,10 +1206,10 @@ def evaluate_meta(circuit):
     tmpInvMetaDC = [np.abs(i) for i in tmpInvMetaDC]
     tmpLinear = [np.abs(i) for i in tmpLinear]
 
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'metaDVoutDiff.csv', [printDVout[0], tmpDVout], 'vin; vdiff\n');    
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'metaTransDiff.csv', [printTrans[0], tmpTrans], 'vin; vdiff\n');
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'invMetaTransDiff.csv', [printInvMetaTrans[0], tmpInvMetaTrans], 'vin; vdiff\n');
-    write_to_csv2(DATA_FOLDER + DIR_NAME + 'invMetaDCDiff.csv', [printInvMetaDC[0], tmpInvMetaDC], 'vin; vdiff\n');
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'metaDVoutDiff.csv', [printDVout[0], tmpDVout], 'vin; vdiff\n');    
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'metaTransDiff.csv', [printTrans[0], tmpTrans], 'vin; vdiff\n');
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'invMetaTransDiff.csv', [printInvMetaTrans[0], tmpInvMetaTrans], 'vin; vdiff\n');
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'invMetaDCDiff.csv', [printInvMetaDC[0], tmpInvMetaDC], 'vin; vdiff\n');
     
     plt.figure()
     plt.semilogy(printDVout[0], tmpDVout, 'g-', label='static prediction')
@@ -1279,7 +1279,7 @@ def evaluate_meta(circuit):
             tmpPrint[1].append(abs(float( code.stdout.read().split('=')[1] )))
 
         plt.semilogy(tmpPrint[0], tmpPrint[1], styles[idxPlot], label=labels[idxPlot])
-        write_to_csv2(DATA_FOLDER + DIR_NAME + entry[0] + '.csv', tmpPrint, 'vin,log(deviation)\n')
+        write_csv_column(DATA_FOLDER + DIR_NAME + entry[0] + '.csv', tmpPrint, 'vin,log(deviation)\n')
         idxPlot += 1
             
     plt.grid()
@@ -1313,6 +1313,12 @@ def prepare_simulation(circuit, technology):
     if not os.path.isdir(SPICE_FOLDER +DIR_NAME):
         os.mkdir(SPICE_FOLDER +DIR_NAME)
 
+    if not os.path.isdir(FIG_FOLDER):
+        os.mkdir(FIG_FOLDER)
+        
+    if not os.path.isdir(SPICE_FOLDER +DIR_NAME):
+        os.mkdir(SPICE_FOLDER +DIR_NAME)
+        
     if not os.path.isdir(DATA_FOLDER):
         os.mkdir(DATA_FOLDER)
 
@@ -1326,9 +1332,9 @@ def print_usage():
     print("usage: python %s <circuit> <technology> <analysis>"%sys.argv[0])
     print("\nmeta ... calculate hysteresis and metastable line using bisection")
     print("map ... print map of dVout/dt over the Vin-Vout plane")
-    print("meta_dVout_dt ... calculate metastable values based on dVout/dt map")
-    print("meta_trans ... calculate metastable values based on transient simulations")
-    print("inv_trans ... calculate metastable values based on metastability inversion")
+    print("dVout ... calculate metastable values based on dVout/dt map")
+    print("trans ... calculate metastable values based on transient simulations")
+    print("inv ... calculate metastable values based on metastability inversion")
     print("dc ... calculate metastable values based on DC analysis")
     print("amp ... determine loop amplification in metastable values")
     print("amp_vin ... loop amplification for single input voltage but multiple output voltages")
@@ -1355,14 +1361,14 @@ if __name__ == '__main__':
         get_meta(circuit)
     elif (mode == "map"):
         get_dVout_dt(circuit)
-    elif (mode == "meta_dVout_dt"):
+    elif (mode == "dVout"):
         get_meta_dVout_dt(circuit)
-    elif (mode == "meta_trans"):
+    elif (mode == "trans"):
         get_meta_trans(circuit)
-    elif (mode == "inv_trans"):
+    elif (mode == "inv"):
         get_inv_meta_trans(circuit)
     elif (mode == "dc"):
-        get_inv_meta_dc(circuit)
+        get_meta_dc(circuit)
     elif (mode == "amp"):
         get_loop_amplification(circuit)
     elif (mode == "amp_vin"):

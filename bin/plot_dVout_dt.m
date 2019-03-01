@@ -52,7 +52,7 @@ function plot_dVout_dt(inPath, outPath)
   % put the middle part shall be printed dashed it has to be determined
   % at first
   
-  inFileName = strcat(inPath,'metaSPICE.csv');
+  inFileName = strcat(inPath,'meta_line.csv');
   D = dlmread(inFileName,';',1,0);
 
   [v,idxTop] = max(D(1:size(D(:,1))/2,1));
