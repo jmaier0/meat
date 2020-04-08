@@ -35,9 +35,9 @@ function plot_dVout_dt(inPath, outPath)
   
   % use minVal/20 and maxVal/20 to get closer to the metastable,
   % these are empirical values and might be adapted if required
-  range = linspace(minVal,minVal/20,10);
-  range2 = linspace(maxVal/20,maxVal,10);
-  levels = [range, range2];
+  range = linspace(minVal,minVal/20,5);
+  range2 = linspace(maxVal/20,maxVal,5);
+  levels = [range, 0, range2];
   
   contourf(X,Y,Z,levels,'k');
   
@@ -52,17 +52,19 @@ function plot_dVout_dt(inPath, outPath)
   % put the middle part shall be printed dashed it has to be determined
   % at first
   
-  inFileName = strcat(inPath,'meta_line.csv');
-  D = dlmread(inFileName,';',1,0);
+%  inFileName = strcat(inPath,'meta_line.csv');
+%  D = dlmread(inFileName,';',1,0);
 
-  [v,idxTop] = max(D(1:size(D(:,1))/2,1));
-  [v,idxBot] = min(D(size(D(:,1))/2:end,1));
-  idxBot = idxBot + size(D(:,1))/2;
+%  [v,idxTop] = max(D(1:size(D(:,1))/2,1));
+%  [v,idxBot] = min(D(size(D(:,1))/2:end,1));
+%  idxBot = idxBot + size(D(:,1))/2;
   
-  plot(D(1:idxTop,1), D(1:idxTop,2), 'k', 'LineWidth', 2)
-  plot(D(idxTop:idxBot,1), D(idxTop:idxBot,2), '--k', 'LineWidth', 2)
-  plot(D(idxBot:end,1), D(idxBot:end,2), 'k', 'LineWidth', 2)
-  
+%  plot(D(1:idxTop,1), D(1:idxTop,2), 'k', 'LineWidth', 2)
+%  plot(D(idxTop:idxBot,1), D(idxTop:idxBot,2), '--k', 'LineWidth', 2)
+%  plot(D(idxBot:end,1), D(idxBot:end,2), 'k', 'LineWidth', 2)
   outFileName = strcat(outPath,'dVout.png');
   saveas(h,outFileName,'png')
+  
+  outFileName = strcat(outPath,'dVout.pdf');
+  saveas(h,outFileName,'pdf')
   

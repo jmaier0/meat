@@ -30,8 +30,8 @@ TECH_FOLDER='../technologies/'
 DIR_NAME=''
 SPICE_COMMAND='hspice'
 
-DVOUT_COUNT_VIN=100 # how many different input voltage values to use
-DVOUT_COUNT_VOUT=100 # how many different output voltage values to use
+DVOUT_COUNT_VIN=200 # how many different input voltage values to use
+DVOUT_COUNT_VOUT=200 # how many different output voltage values to use
 HYSTERESIS_COUNT_MULT=1 # multiplicative factor how many more input voltage values
    # to use during the hysteresis
 
@@ -228,6 +228,24 @@ def write_csv_2D(data, name):
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+def write_pgfplots_2D(data, name):
+
+    fileName = DATA_FOLDER + DIR_NAME + name + '_pgfplots.dat'
+    print_info("writing 2D data to pfgplot data file %s"%fileName)
+    
+    text = 'Vin Vout Iout\n'
+    
+    for idxVout, voutVal in enumerate(data[1]):
+        for idxVin, vinVal in enumerate(data[0]):
+            text += '%s %s %s\n'%(vinVal, voutVal, data[2][idxVout][idxVin])
+
+        text += '\n'
+        
+    with open(fileName,'w') as f:
+        f.write(text[:-1])
+        
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 def write_csv_row(fileName, data, header):
 
     print_info("writing data to %s"%fileName)
@@ -295,7 +313,7 @@ def column_to_row(data):
 def read_dVout(fileName):
     
     if not os.path.isfile(fileName):
-        get_dVout(circuit)
+        get_dVout_dt(circuit)
 
     return(read_csv_2D(fileName))
 
@@ -653,11 +671,12 @@ def get_dVout_dt(name):
     data = read_hspice_2D(spiceFileName[:-3]+'.sw0')
 
     write_csv_2D(data, 'dVout_dt')
+    write_pgfplots_2D(data, 'dVout_dt')
 
     print_info("starting generation of matlab file")
     cmd = "matlab -r 'plot_dVout_dt '%s' '%s'; quit' -nodisplay"\
             %(DATA_FOLDER + DIR_NAME, FIG_FOLDER + DIR_NAME[:-1] + '_')
-    code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
+#    code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
 
     if (code != 0):
         print_error("matlab failed")
@@ -1289,10 +1308,116 @@ def evaluate_meta(circuit):
     plt.savefig(FIG_FOLDER+DIR_NAME[:-1]+'_meta_prediction_comp.png')    
 
     print_info("evaluate_meta took %s seconds"%(time.time()-start_time))
-    
-#********************************************************************************
 
-def prepare_simulation(circuit, technology):
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+def get_tau(dVout, dVoutRowIdx, dVoutColIdx):
+
+    slopeFittingCount = 3
+    slopeSkipEnd = 2
+
+    taus = []
+
+    if dVoutRowIdx < len(dVout[1])-slopeFittingCount - slopeSkipEnd -1:
+
+        polyParams = np.polyfit(dVout[1][dVoutRowIdx+1:dVoutRowIdx+slopeFittingCount],
+                                dVout[2][dVoutRowIdx+1:dVoutRowIdx+slopeFittingCount,
+                                         dVoutColIdx].flatten().tolist()[0],1)
+        ootau = polyParams[0]
+
+        taus.append(ootau)
+
+        plt.figure()
+        plt.plot(dVout[1][dVoutRowIdx+1:dVoutRowIdx+slopeFittingCount],
+                                dVout[2][dVoutRowIdx+1:dVoutRowIdx+slopeFittingCount,
+                                         dVoutColIdx].flatten().tolist()[0], 'b*-')
+
+        p1 = np.poly1d(polyParams)
+        y = [p1(x) for x in dVout[1][dVoutRowIdx+1:dVoutRowIdx+slopeFittingCount]]
+        plt.plot(dVout[1][dVoutRowIdx+1:dVoutRowIdx+slopeFittingCount], y, 'r-')
+        plt.grid()
+        plt.xlabel('Vin')
+        plt.ylabel('I_out')
+        plt.savefig(FIG_FOLDER+DIR_NAME[:-1]+'_tau_map_%.3f_down.png'%dVout[0][dVoutColIdx])
+        
+    else:
+        taus.append(0)
+
+    if (dVoutRowIdx > slopeFittingCount + slopeSkipEnd) :
+
+        polyParams = np.polyfit(dVout[1][dVoutRowIdx:dVoutRowIdx-slopeFittingCount:-1],
+                                dVout[2][dVoutRowIdx:dVoutRowIdx-slopeFittingCount:-1,
+                                         dVoutColIdx].flatten().tolist()[0],1)
+        ootau = polyParams[0]
+        taus.append(ootau)
+
+        plt.figure()
+        plt.plot(dVout[1][dVoutRowIdx:dVoutRowIdx-slopeFittingCount:-1],
+                                dVout[2][dVoutRowIdx:dVoutRowIdx-slopeFittingCount:-1,
+                                         dVoutColIdx].flatten().tolist()[0], 'b*-')
+
+        p1 = np.poly1d(polyParams)
+        y = [p1(x) for x in dVout[1][dVoutRowIdx:dVoutRowIdx-slopeFittingCount:-1]]
+        plt.plot(dVout[1][dVoutRowIdx:dVoutRowIdx-slopeFittingCount:-1],y, 'r-')
+        plt.grid()
+        plt.xlabel('Vin')
+        plt.ylabel('I_out')
+        plt.savefig(FIG_FOLDER+DIR_NAME[:-1]+'_tau_map_%.3f_up.png'%dVout[0][dVoutColIdx])
+        
+    else:
+        taus.append(0)
+
+    return taus
+    
+#********************************************************************************    
+
+def get_tau_from_map(circuit):
+
+    print_info("starting determination of tau based on dVout map")
+    
+    tauData = [[], [], [], []]
+    
+    dVout = read_dVout(DATA_FOLDER + DIR_NAME + 'dVout_dt.csv')
+
+    start_time = time.time()
+    
+    #-----------------------------------------------------------------
+
+    for colIdx in range(len(dVout[0])):
+        for rowIdx in range(1,len(dVout[1])):
+
+            # metastable point crossed
+            # note that we go from vout=supp towards vout=gnd
+            if (dVout[2][rowIdx, colIdx] < 0 ) and (dVout[2][rowIdx-1, colIdx] > 0):
+                tauData[0].append(dVout[0][colIdx])
+                taus=get_tau(dVout, rowIdx-1, colIdx)
+                
+                tauData[1].append(taus[0])
+                tauData[2].append(taus[1])
+                tauData[3].append( (taus[0]+taus[1])/2 )
+                break
+
+    #-----------------------------------------------------------------
+
+    print_info("get_tau_from_map took %s seconds"%(time.time()-start_time))
+        
+    plt.figure()
+    plt.plot(tauData[0], tauData[1], 'b-')
+    plt.plot(tauData[0], tauData[2], 'g-')
+    plt.plot(tauData[0], tauData[3], 'c-')
+    plt.grid()
+    plt.xlabel('Vin')
+    plt.ylabel('1/tau')
+    plt.savefig(FIG_FOLDER+DIR_NAME[:-1]+'_tau_map.png')
+
+    write_csv_column(DATA_FOLDER + DIR_NAME + 'TauFromMap.csv', tauData, 'vin;tau_d;tau_u;tau_avg\n');
+    
+    print_info("determination of tau done")
+    
+        
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+def prepare_simulation(circuit, technology, suffix):
 
     global DIR_NAME
     
@@ -1305,7 +1430,7 @@ def prepare_simulation(circuit, technology):
         print_error("stated technology '%s' does not exist!"%technology)
         sys.exit(1)
 
-    DIR_NAME = circuit + '_' + technology + '/'
+    DIR_NAME = circuit + '_' + technology + '_' + suffix + '/'
 
     if not os.path.isdir(SPICE_FOLDER):
         os.mkdir(SPICE_FOLDER)
@@ -1329,10 +1454,11 @@ def prepare_simulation(circuit, technology):
 
 def print_usage():
         
-    print("usage: python %s <circuit> <technology> <analysis>"%sys.argv[0])
+    print("usage: python %s <circuit> <technology> <analysis> [path suffix]"%sys.argv[0])
     print("\nmeta ... calculate hysteresis and metastable line using bisection")
     print("map ... print map of dVout/dt over the Vin-Vout plane")
     print("dVout ... calculate metastable values based on dVout/dt map")
+    print("tau ... derive tau values from dVout/dt map")
     print("trans ... calculate metastable values based on transient simulations")
     print("inv ... calculate metastable values based on metastability inversion")
     print("dc ... calculate metastable values based on DC analysis")
@@ -1347,15 +1473,19 @@ def print_usage():
 
 if __name__ == '__main__':
 
-    if len(sys.argv) != 4:
+    if len(sys.argv) < 4 or len(sys.argv) > 5:
         print_usage()
         sys.exit()
 
     circuit=sys.argv[1]
     technology=sys.argv[2]
     mode=sys.argv[3]
-    
-    prepare_simulation(circuit, technology)
+    if len(sys.argv) == 5:
+        suffix = sys.argv[4]
+    else:
+        suffix = ''
+
+    prepare_simulation(circuit, technology, suffix)
     
     if (mode == "meta"):
         get_meta(circuit)
@@ -1363,6 +1493,8 @@ if __name__ == '__main__':
         get_dVout_dt(circuit)
     elif (mode == "dVout"):
         get_meta_dVout_dt(circuit)
+    elif (mode == "tau"):
+        get_tau_from_map(circuit)
     elif (mode == "trans"):
         get_meta_trans(circuit)
     elif (mode == "inv"):
@@ -1377,7 +1509,7 @@ if __name__ == '__main__':
         evaluate_meta(circuit)
     elif (mode == "all"):
         get_meta(circuit)
-        get_dVout(circuit)
+        get_dVout_dt(circuit)
         get_meta_trans(circuit)
         get_meta_dVout_dt(circuit)
         get_inv_meta_dc(circuit)
