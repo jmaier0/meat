@@ -63,8 +63,6 @@ GI 8 0 integv 0 I
 xdiff in diffv  differentiator
 GD 8 0 diffv 0 D
 
-COUT 8 0 0.002p
-
 .MEAS TRAN finalVal FIND V(8) AT=simTime
 .PROBE TRAN I(Vmeas) I(FP) I(GI) I(GD) V(8) V(integv) V(diffv)
 .IC 1=inVal 2=outVal

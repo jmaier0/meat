@@ -12,7 +12,7 @@ Transient simulation of standard 6T Schmitt Trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inValLower=<sed>lower<sed>V inValUpper=<sed>upper<sed>V
-.PARAM stepWidth=<sed>step<sed>V outVal=<sed>out<sed>V
+.PARAM stepWidth=<sed>step<sed>V outVal=<sed>out<sed>
 
 .TEMP 25
 .OPTION
@@ -41,8 +41,6 @@ XP3 0 2 3 5 pmos
 XN1 4 1 0 0 nmos
 XN2 2 1 4 0 nmos
 XN3 5 2 4 0 nmos
-
-C1 2 0 0.002p
 
 .PROBE DC V(2)
 .NODESET 2=outVal

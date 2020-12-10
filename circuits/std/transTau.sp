@@ -1,4 +1,4 @@
-Transient simulation of inverter loop Schmitt Trigger
+Transient simulation of standard 6T Schmitt Trigger
 *
 * Copyright 2019 Juergen Maier
 *
@@ -12,14 +12,13 @@ Transient simulation of inverter loop Schmitt Trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
-.PARAM simTime=<sed>time<sed>ps
 
 .TEMP 25
 .OPTION
 + INGOLD=2
 + MEASOUT=1
 + PARHIER=LOCAL
-+ POST=0
++ POST=2
 + PROBE
 + BRIEF
 + ACCURATE
@@ -31,23 +30,18 @@ Transient simulation of inverter loop Schmitt Trigger
 
 VCC 5 0 supp
 VIN 1 0 inVal
+VM 21 22 0
 
-*forward inverter 1
 XP1 3 1 5 5 pmos
-XN1 3 1 0 0 nmos
+XP2 21 1 3 5 pmos
+XP3 0 22 3 5 pmos
 
-*forward inverter 2
-XP2 2 3 5 5 pmos
-XN2 2 3 0 0 nmos
+XN1 4 1 0 0 nmos
+XN2 21 1 4 0 nmos
+XN3 5 22 4 0 nmos
 
-*backward inverter
-XP3 3 2 5 5 pmos_weak
-XN3 3 2 0 0 nmos_weak
-
-.MEASURE startVal FIND V(2) AT=0ps
-.MEASURE stopVal FIND V(2) AT=simTime
-.MEASURE diff PARAM='stopVal-startVal'
-.IC 1=inVal 2=outVal
-.TRAN 1ps simTime
+.PROBE TRAN V(22) dtOut=deriv("V(22)") I(VM)
+.IC 1=inVal 22=outVal
+.TRAN 1ps 5000ps 
 
 .END

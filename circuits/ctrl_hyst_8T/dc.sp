@@ -1,6 +1,6 @@
 Transient simulation of 8T controllable hysteresis Schmitt Trigger
 .PARAM inValLower=<sed>lower<sed>V inValUpper=<sed>upper<sed>V
-.PARAM stepWidth=<sed>step<sed>V outVal=<sed>out<sed>V
+.PARAM stepWidth=<sed>step<sed>V outVal=<sed>out<sed>
 
 .TEMP 25
 .OPTION
@@ -32,8 +32,6 @@ XN1 4 1 0 0 nmos
 XN2 2 1 4 0 nmos
 XN3 7 2 4 0 nmos
 XN4 5 9 7 0 nmos
-
-C1 2 0 loadVal
 
 .PROBE DC V(2)
 .NODESET 2=outVal

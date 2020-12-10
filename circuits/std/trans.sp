@@ -12,7 +12,6 @@ Transient simulation of standard 6T Schmitt Trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
-.PARAM simTime=<sed>time<sed>ps
 
 .TEMP 25
 .OPTION
@@ -31,19 +30,18 @@ Transient simulation of standard 6T Schmitt Trigger
 
 VCC 5 0 supp
 VIN 1 0 inVal
+VM 21 22 0
 
 XP1 3 1 5 5 pmos
-XP2 2 1 3 5 pmos
-XP3 0 2 3 5 pmos
+XP2 21 1 3 5 pmos
+XP3 0 22 3 5 pmos
 
 XN1 4 1 0 0 nmos
-XN2 2 1 4 0 nmos
-XN3 5 2 4 0 nmos
+XN2 21 1 4 0 nmos
+XN3 5 22 4 0 nmos
 
-C1 2 0 loadVal
-
-.PROBE TRAN V(2) dtOut=deriv("V(2)")
-.IC 1=inVal 2=outVal
-.TRAN 1ps simTime
+.PROBE TRAN V(22) dtOut=deriv("V(22)") I(VM)
+.IC 1=inVal 22=outVal
+.TRAN 1ps 300ps 
 
 .END

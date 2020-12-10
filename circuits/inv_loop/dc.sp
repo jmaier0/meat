@@ -12,7 +12,7 @@ Transient simulation of inverter loop Schmitt Trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inValLower=<sed>lower<sed>V inValUpper=<sed>upper<sed>V
-.PARAM stepWidth=<sed>step<sed>V outVal=<sed>out<sed>V
+.PARAM stepWidth=<sed>step<sed>V outVal=<sed>out<sed>
 
 .TEMP 25
 .OPTION
@@ -45,8 +45,6 @@ XN2 2 3 0 0 nmos
 *backward inverter
 XP3 3 2 5 5 pmos_weak
 XN3 3 2 0 0 nmos_weak
-
-C1 2 0 loadVal
 
 .PROBE DC V(2)
 .NODESET 2=outVal

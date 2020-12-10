@@ -1,4 +1,4 @@
-Transient simulation of inverter loop Schmitt Trigger
+Transient and AC analysis of memory loop in standard 6T Schmitt Trigger
 *
 * Copyright 2019 Juergen Maier
 *
@@ -11,43 +11,45 @@ Transient simulation of inverter loop Schmitt Trigger
 * author: Juergen Maier
 * mail: juergen.maier@tuwien.ac.at
 
-.PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
-.PARAM simTime=<sed>time<sed>ps
+.PARAM inVal=<sed>vin<sed>V  outVal=<sed>vout<sed>V
+.PARAM intVal='supp/2' jumpVal=10e-9
 
 .TEMP 25
 .OPTION
 + INGOLD=2
 + MEASOUT=1
 + PARHIER=LOCAL
-+ POST=0
++ POST=2
 + PROBE
 + BRIEF
 + ACCURATE
 + ABSVAR=0.05
 + DELMAX=100fs
 + OPTLST = 1
++ MEASDGT=10
++ RUNLVL=5
 
 .include technology
 
-VCC 5 0 supp
-VIN 1 0 inVal
+VCC VDD 0 dc supp ac 0 0
+VIN IN 0 dc inVal ac 0 0
+IL OUT 0 pulse (0 jumpVal 0ps 0ps 0ps 20ns 100s) AC 1 0
 
-*forward inverter 1
-XP1 3 1 5 5 pmos
-XN1 3 1 0 0 nmos
+Vmeas OUT DRIVER dc 0 ac 0 0
 
-*forward inverter 2
-XP2 2 3 5 5 pmos
-XN2 2 3 0 0 nmos
+XP1 INTP IN VDD VDD pmos
+XP2 DRIVER IN INTP VDD pmos
+XP3 0 OUT INTP VDD pmos
 
-*backward inverter
-XP3 3 2 5 5 pmos_weak
-XN3 3 2 0 0 nmos_weak
+XN1 INTN IN 0 0 nmos
+XN2 DRIVER IN INTN 0 nmos
+XN3 VDD OUT INTN 0 nmos
 
-.MEASURE startVal FIND V(2) AT=0ps
-.MEASURE stopVal FIND V(2) AT=simTime
-.MEASURE diff PARAM='stopVal-startVal'
-.IC 1=inVal 2=outVal
-.TRAN 1ps simTime
+.TRAN 1ps 6ns 
+.AC DEC 10 1 10000G
+.probe ac idb(Vmeas) ip(Vmeas)
+.probe tran v(IN) v(OUT) i(Vmeas) i(IL)
+
+.NODESET OUT=outVal INTN=intVal INTP=intVal
 
 .END

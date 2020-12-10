@@ -48,8 +48,6 @@ XN4 5 9 7 0 nmos
 Vmeas 2 8 0
 F1 8 0 Vmeas 1.65
 
-C1 8 0 loadVal
-
 .MEAS TRAN finalVal AVG V(2) FROM=6ns TO=simTime
 .PROBE TRAN V(8) I(Vmeas) I(F1)
 .IC 1=inVal 2=outVal

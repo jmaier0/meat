@@ -43,12 +43,20 @@ XN2 2 1 4 0 nmos
 XN3 7 20 4 0 nmos
 XN4 5 9 7 0 nmos
 
-C1 2 0 loadVal
-
-.IC 2=outVal
-.ac dec '10' '0' '10'
+.NODESET 2=outVal
+.AC DEC 10 1 10000G
 .lstb mode=single vsource=vlstb
-.measure ac maxMag max LSTB(r)
-.measure lstb gain loop_gain_at_minifreq
+.probe ac lstb(db) lstb(p)
+
+.measure LSTB unity_freq unity_gain_freq
+.measure LSTB gain loop_gain_at_minifreq
+.measure AC maxGain FIND lstb(db) AT=10
+.measure AC cutoff_freq trig lstb(db) val=maxGain targ lstb(db) val='maxGain-3'
+
+*.measure ac myfreq FIND lstb(M) AT=10meg
+*.ac dec '10' '0' '10'
+*.lstb mode=single vsource=vlstb
+*.measure ac maxMag max LSTB(r)
+*.measure lstb gain loop_gain_at_minifreq
 
 .END

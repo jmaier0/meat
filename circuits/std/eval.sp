@@ -40,8 +40,6 @@ XN1 4 1 0 0 nmos
 XN2 2 1 4 0 nmos
 XN3 5 2 4 0 nmos
 
-C1 2 0 0.002p
-
 .MEASURE startVal FIND V(2) AT=0ps
 .MEASURE stopVal FIND V(2) AT=simTime
 .MEASURE diff PARAM='stopVal-startVal'

@@ -25,12 +25,16 @@ determining gain of storage loop in standard 6T Schmitt Trigger
 + ABSVAR=0.05
 + DELMAX=100fs
 + OPTLST = 1
++ MEASFORM=3
++ MEASDGT=10
 
 .include technology
 
 VCC 5 0 supp
 VIN 1 0 inVal
 VLSTB 2 20 dc=0
+*VLSTB3 30 3 dc=0
+*VLSTB4 40 4 dc=0
 
 XP1 3 1 5 5 pmos
 XP2 2 1 3 5 pmos
@@ -40,13 +44,19 @@ XN1 4 1 0 0 nmos
 XN2 2 1 4 0 nmos
 XN3 5 20 4 0 nmos
 
-*C1 2 0 loadVal
-
 .OP vol
-.IC 2=outVal
-.ac dec '10' '0' '10'
+.NODESET 2=outVal
+.AC DEC 10 1 10000G
 .lstb mode=single vsource=vlstb
-.measure ac maxMag max LSTB(r)
-.measure lstb gain loop_gain_at_minifreq
+*.lstb mode=comm vsource=vlstb3,vlstb4
+.probe ac lstb(db) lstb(p)
+
+.measure LSTB unity_freq unity_gain_freq
+.measure LSTB gain loop_gain_at_minifreq
+.measure AC maxGain FIND lstb(db) AT=10
+.measure AC cutoff_freq trig lstb(db) val=maxGain targ lstb(db) val='maxGain-3'
+
+*.measure ac myfreq FIND lstb(M) AT=10meg
+*.measure ac maxMag max LSTB(r)
 
 .END

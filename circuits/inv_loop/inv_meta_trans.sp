@@ -49,8 +49,6 @@ XN3 3 2 0 0 nmos_weak
 Vmeas 2 8 0
 F1 8 0 Vmeas 1.008
 
-C1 8 0 loadVal
-
 .MEAS TRAN finalVal FIND V(2) AT=simTime
 .PROBE TRAN V(8) I(Vmeas) I(F1)
 .IC 1=inVal 2=outVal

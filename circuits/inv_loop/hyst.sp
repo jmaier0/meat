@@ -44,8 +44,6 @@ XN2 2 3 0 0 nmos
 XP3 3 2 5 5 pmos_weak
 XN3 3 2 0 0 nmos_weak
 
-C1 2 0 0.002p
-
 .DC VIN startVal stopVal stepSize
 .PROBE DC V(2)
 

@@ -40,8 +40,6 @@ XN1 4 1 0 0 nmos
 XN2 2 1 4 0 nmos
 XN3 5 2 4 0 nmos
 
-C1 2 0 0.002p
-
 .DC VIN startVal stopVal stepSize
 .PROBE DC V(2)
 
