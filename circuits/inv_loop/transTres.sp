@@ -11,7 +11,8 @@ Transient simulation of inverter loop Schmitt Trigger
 * author: Juergen Maier
 * mail: juergen.maier@tuwien.ac.at
 
-.PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
+.PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V runTime=<sed>runTime<sed>ps
+.PARAM supp09='0.9*supp' supp01='0.1*supp'
 
 .TEMP 25
 .OPTION
@@ -44,8 +45,10 @@ XN2 21 3 0 0 nmos
 XP3 3 22 5 5 pmos_weak
 XN3 3 22 0 0 nmos_weak
 
-.PROBE TRAN V(22) dtOut=deriv("V(22)") I(VM)
+.PROBE TRAN V(22)
 .IC 1=inVal 22=outVal
-.TRAN 1ps 70ps 
+.MEASURE TRAN tresu TRIG AT=0ps TARG V(21) VAL=supp09 RISE=LAST
+.MEASURE TRAN tresd TRIG AT=0ps TARG V(21) VAL=supp01 FALL=LAST
+.TRAN 1ps runTime
 
 .END

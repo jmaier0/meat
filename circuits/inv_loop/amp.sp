@@ -52,7 +52,7 @@ XN3 3 20 0 0 nmos_weak
 .measure LSTB unity_freq unity_gain_freq
 .measure LSTB gain loop_gain_at_minifreq
 .measure AC maxGain FIND lstb(db) AT=10
-.measure AC cutoff_freq trig lstb(db) val=maxGain targ lstb(db) val='maxGain-3'
-
+*.measure AC cutoff_freq trig lstb(db) val=maxGain targ lstb(db) val='maxGain-3'
+.measure AC cutoff_freq trig at=0 targ lstb(db) val='maxGain-3' FALL=LAST
 
 .END

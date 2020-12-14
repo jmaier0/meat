@@ -45,7 +45,7 @@ XP3 3 22 5 5 pmos_weak
 XN3 3 22 0 0 nmos_weak
 
 .PROBE TRAN V(22) dtOut=deriv("V(22)") I(VM)
-.NODESET 1=inVal 22=outVal
-.TRAN 1ps 190ps 
+.IC 1=inVal 22=outVal
+.TRAN 1ps 100ps 
 
 .END
