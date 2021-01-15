@@ -1,4 +1,4 @@
-Transient and AC analysis of memory loop in 8T controllable hysteresis Schmitt Trigger
+Simulate hysteresis of standard 6T schmitt trigger
 *
 * Copyright 2019 Juergen Maier
 *
@@ -11,8 +11,10 @@ Transient and AC analysis of memory loop in 8T controllable hysteresis Schmitt T
 * author: Juergen Maier
 * mail: juergen.maier@tuwien.ac.at
 
-.PARAM inVal=<sed>vin<sed>V  outVal=<sed>vout<sed>V
-.PARAM intVal='2*supp/3' jumpVal=10e-9
+.PARAM inVal=<sed>vin<sed>
+.PARAM vout_VL=<sed>voutVL<sed> vout_VH=<sed>voutVH<sed>
+.PARAM vout_start='(vout_VL+vout_VH)/2'
+.PARAM ref='supp/2' sh='supp/2'
 
 .TEMP 25
 .OPTION
@@ -26,38 +28,31 @@ Transient and AC analysis of memory loop in 8T controllable hysteresis Schmitt T
 + ABSVAR=0.05
 + DELMAX=100fs
 + OPTLST = 1
-+ pz_num = 15
-+ PZABS=1e-4
-+ PZTOL=1e-8
-+ RITOL=1e-4
 
 .include technology
+.include parameters.sp
 
-VCC VDD 0 dc supp ac 0 0
-VIN IN 0 dc inVal ac 0 0
-VB B 0 dc vbVal ac 0 0
-IL OUT 0 pulse (0 jumpVal 0ps 0ps 0ps 20ns 100s) AC 1 0
+VIN IN 0 dc
+VR R 0 ref
+VOUT OUT 0 outVal
+VSH SUHA 0 sh
 
-Vmeas OUT DRIVER dc 0 ac 0 0
+E OP SUHA IN 3 opamp_amplification MAX=sh MIN=-sh
 
-XP1 INTP IN VDD VDD pmos
-XP2 DRIVER IN INTP VDD pmos
-XP3 CP OUT INTP VDD pmos
-XP4 0 B CP VDD pmos
+R0 OP OUT R_0
+C0 OUT 0 C_0
 
-XN1 INTN IN 0 0 nmos
-XN2 DRIVER IN INTN 0 nmos
-XN3 CN OUT INTN 0 nmos
-XN4 VDD B CN 0 nmos
+RA OUT 3 R_A
+RB 3 R R_B
 
-.TRAN 1ps 6ns 
-.AC DEC 10 1 10000G
-.probe ac idb(Vmeas) ip(Vmeas)
-.probe tran v(IN) v(OUT) i(Vmeas) i(IL)
-.pz I(Vmeas) IL
+.measure DC optMeasure max i(VOUT) GOAL=0
 
-.IC OUT=outVal
-.NODESET INTN=intVal INTP=intVal CN=intVal CP=intVal
+.model optMod1 OPT METHOD=BISECTION RELIN=1e-4 ITROPT=40
+.param outVal=optFunc1(vout_start, vout_VL, vout_VH)
+.DC VIN inVal inVal 1 SWEEP OPTIMIZE=optFunc1 RESULTS=optMeasure
++ MODEL=optMod1
 
+.DC VIN inVal inVal 1
+.PROBE DC V(OUT)
 
 .END

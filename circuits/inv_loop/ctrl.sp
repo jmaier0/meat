@@ -29,6 +29,10 @@ Transient and AC analysis of memory loop inside inverter loop schmitt trigger
 + OPTLST = 1
 + MEASDGT=10
 + RUNLVL=5
++ pz_num = 15
++ PZABS=1e-4
++ PZTOL=1e-8
++ RITOL=1e-4
 
 .include technology
 
@@ -54,7 +58,9 @@ XN3 INT OUT 0 0 nmos_weak
 .AC DEC 10 1 10000G
 .probe ac idb(Vmeas) ip(Vmeas)
 .probe tran v(IN) v(OUT) i(Vmeas) i(IL)
+.pz I(Vmeas) IL
 
-.NODESET OUT=outVal INT=intVal
+.IC OUT=outVal
+.NODESET INT=intVal
 
 .END

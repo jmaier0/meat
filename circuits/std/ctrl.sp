@@ -28,6 +28,10 @@ Transient and AC analysis of memory loop in standard 6T Schmitt Trigger
 + OPTLST = 1
 + MEASDGT=10
 + RUNLVL=5
++ pz_num = 15
++ PZABS=1e-4
++ PZTOL=1e-8
++ RITOL=1e-4
 
 .include technology
 
@@ -49,7 +53,9 @@ XN3 VDD OUT INTN 0 nmos
 .AC DEC 10 1 10000G
 .probe ac idb(Vmeas) ip(Vmeas)
 .probe tran v(IN) v(OUT) i(Vmeas) i(IL)
+.pz I(Vmeas) IL
 
-.NODESET OUT=outVal INTN=intVal INTP=intVal
+.IC OUT=outVal
+.NODESET INTN=intVal INTP=intVal
 
 .END

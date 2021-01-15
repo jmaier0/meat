@@ -1,4 +1,4 @@
-Transient and AC analysis of memory loop in 8T controllable hysteresis Schmitt Trigger
+Transient simulation of inverter loop Schmitt Trigger
 *
 * Copyright 2019 Juergen Maier
 *
@@ -11,8 +11,10 @@ Transient and AC analysis of memory loop in 8T controllable hysteresis Schmitt T
 * author: Juergen Maier
 * mail: juergen.maier@tuwien.ac.at
 
-.PARAM inVal=<sed>vin<sed>V  outVal=<sed>vout<sed>V
-.PARAM intVal='2*supp/3' jumpVal=10e-9
+.PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
+.PARAM simTime='2000ps*<sed>mult<sed>'
+.PARAM P=<sed>P<sed>
+*PARAM D=0 I=0
 
 .TEMP 25
 .OPTION
@@ -26,38 +28,45 @@ Transient and AC analysis of memory loop in 8T controllable hysteresis Schmitt T
 + ABSVAR=0.05
 + DELMAX=100fs
 + OPTLST = 1
-+ pz_num = 15
-+ PZABS=1e-4
-+ PZTOL=1e-8
-+ RITOL=1e-4
++ MEASDGT=10
++ RUNLVL=5
 
 .include technology
 
-VCC VDD 0 dc supp ac 0 0
-VIN IN 0 dc inVal ac 0 0
-VB B 0 dc vbVal ac 0 0
-IL OUT 0 pulse (0 jumpVal 0ps 0ps 0ps 20ns 100s) AC 1 0
+VCC VDD 0 supp
+VIN IN 0 inVal
 
-Vmeas OUT DRIVER dc 0 ac 0 0
+Vmeas FF_OUT OUT 0
 
-XP1 INTP IN VDD VDD pmos
-XP2 DRIVER IN INTP VDD pmos
-XP3 CP OUT INTP VDD pmos
-XP4 0 B CP VDD pmos
+*forward inverter 1
+XP1 INT IN VDD VDD pmos
+XN1 INT IN 0 0 nmos
 
-XN1 INTN IN 0 0 nmos
-XN2 DRIVER IN INTN 0 nmos
-XN3 CN OUT INTN 0 nmos
-XN4 VDD B CN 0 nmos
+*forward inverter 2
+XP2 FF_OUT INT VDD VDD pmos
+XN2 FF_OUT INT 0 0 nmos
 
-.TRAN 1ps 6ns 
-.AC DEC 10 1 10000G
-.probe ac idb(Vmeas) ip(Vmeas)
-.probe tran v(IN) v(OUT) i(Vmeas) i(IL)
-.pz I(Vmeas) IL
+*backward inverter
+XP3 INT OUT VDD VDD pmos_weak
+XN3 INT OUT 0 0 nmos_weak
 
+
+* Proportional
+FP OUT 0 Vmeas P
+
+* Integral
+*HI ctrl  0  Vmeas 1
+*xint ctrl integv  integrator
+*GI OUT 0 integv 0 I
+
+* Differential
+*xdiff ctrln diffv  differentiator
+*GD OUT 0 diffv 0 D
+
+
+.MEAS TRAN finalVal FIND V(OUT) AT=simTime
+.PROBE TRAN V(OUT) I(Vmeas) I(FP)
 .IC OUT=outVal
-.NODESET INTN=intVal INTP=intVal CN=intVal CP=intVal
-
+.TRAN 200fs simTime
 
 .END

@@ -36,11 +36,11 @@ VIN 1 0 inVal
 
 XP1 3 1 5 5 pmos
 XP2 2 1 3 5 pmos
-XP3 0 2 3 5 pmos
+XP3 0 8 3 5 pmos
 
 XN1 4 1 0 0 nmos
 XN2 2 1 4 0 nmos
-XN3 5 2 4 0 nmos
+XN3 5 8 4 0 nmos
 
 Vmeas 2 8 0
 F1 8 0 Vmeas 1.5
