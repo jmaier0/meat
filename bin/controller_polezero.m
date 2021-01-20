@@ -12,10 +12,9 @@
 
 
 function controller_polezero(inPath, outPath)
-  clear;
 
   files = strcat(inPath, 'pz_*.dat');
-  output = strcat(outPath, 'controller_PID.txt')
+  output = strcat(outPath, 'controller_PID.txt');
 
   %Range for computing the root-locus plot
   K_P_range=[0,5];
@@ -26,7 +25,7 @@ function controller_polezero(inPath, outPath)
   output=fopen(output,'w+');
   f=logspace(1,14,1000);
   for j=1:size(files,1)
-    [p,z]=importfile_polezero([files(j).folder,'\',files(j).name]);
+    [p,z]=importfile_polezero([files(j).folder,'/',files(j).name]);
     
     G=tf(poly(z),poly(p));
     V=freqresp(G,0);
@@ -133,6 +132,7 @@ function controller_polezero(inPath, outPath)
     fprintf(output,'%s',s);
   end
   fclose(output);
+end
 
 function [res,lambda]=overshoot_ratio(K_P,G)
   try

@@ -12,7 +12,6 @@ Simulate hysteresis of standard 6T schmitt trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V runTime=<sed>runTime<sed>ps
-.PARAM supp09='0.9*supp' supp01='0.1*supp'
 
 .TEMP 25
 .OPTION
@@ -46,8 +45,6 @@ RB 3 R R_B
 
 .PROBE TRAN V(OUT) dtOut=deriv("V(OUT)") I(VM)
 .IC OUT=outVal
-.MEASURE TRAN tresu TRIG AT=0ps TARG V(21) VAL=supp09 RISE=LAST
-.MEASURE TRAN tresd TRIG AT=0ps TARG V(21) VAL=supp01 FALL=LAST
 .TRAN 1ps runTime
 
 .END

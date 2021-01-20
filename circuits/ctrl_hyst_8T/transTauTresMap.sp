@@ -1,4 +1,4 @@
-Simulate hysteresis of standard 6T schmitt trigger
+Transient simulation of 8T controllable hysteresis Schmitt Trigger
 *
 * Copyright 2019 Juergen Maier
 *
@@ -12,7 +12,6 @@ Simulate hysteresis of standard 6T schmitt trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V runTime=<sed>runTime<sed>ps
-.PARAM supp09='0.9*supp' supp01='0.1*supp'
 
 .TEMP 25
 .OPTION
@@ -28,26 +27,24 @@ Simulate hysteresis of standard 6T schmitt trigger
 + OPTLST = 1
 
 .include technology
-.include parameters.sp
 
-VIN IN 0 inVal
-VR R 0 ref
-VSH SUHA 0 sh
-VM OUT OUT_FB 0
+VCC 5 0 supp
+VIN 1 0 inVal
+VB 9 0 vbVal
+VM 21 22 0
 
-E OP SUHA IN 3 opamp_amplification MAX=sh MIN=-sh
+XP1 3 1 5 5 pmos
+XP2 21 1 3 5 pmos
+XP3 6 22 3 5 pmos
+XP4 0 9 6 5 pmos
 
-R0 OP OUT R_0
-C0 OUT_FB 0 C_0
+XN1 4 1 0 0 nmos
+XN2 21 1 4 0 nmos
+XN3 7 22 4 0 nmos
+XN4 5 9 7 0 nmos
 
-RA OUT 3 R_A
-RB 3 R R_B
-
-
-.PROBE TRAN V(OUT) dtOut=deriv("V(OUT)") I(VM)
-.IC OUT=outVal
-.MEASURE TRAN tresu TRIG AT=0ps TARG V(21) VAL=supp09 RISE=LAST
-.MEASURE TRAN tresd TRIG AT=0ps TARG V(21) VAL=supp01 FALL=LAST
+.PROBE TRAN V(22) dtOut=deriv("V(22)") I(VM)
+.IC 22=outVal
 .TRAN 1ps runTime
 
 .END

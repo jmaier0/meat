@@ -24,6 +24,7 @@ import time
 import math
 import glob
 from rawread import *
+#from scipy import signal
 
 FIG_FOLDER='../figures/'
 SPICE_FOLDER='../hspice/'
@@ -547,14 +548,14 @@ def do_trans_tau(vin, vout, startName='trans', doEval=True, vint=0):
     print_info("starting do_trans_tau for vin=%s and vout=%s"%(vin, vout))
     
     fileName = CIRCUIT_FOLDER + circuit + '/' + startName + '.sp'
-    
+
     stringVin = ("%.7f"%vin).replace('.','')
     stringVout = ("%.7f"%vout).replace('.','')    
     
     spiceFileName = SPICE_FOLDER + DIR_NAME + startName + '_%s_%s.sp'%(stringVin, stringVout)
 
-    if not os.path.isfile(spiceFileName[:-3]+'.tr0'):
-#    if not os.path.isfile(spiceFileName[:-3]+'.aaa'):
+#    if not os.path.isfile(spiceFileName[:-3]+'.tr0'):
+    if not os.path.isfile(spiceFileName[:-3]+'.aaa'):
         cmd = "sed -e 's/<sed>in<sed>/%s/' -e 's/<sed>out<sed>/%s/' -e 's/<sed>int<sed>/%s/' "\
                 %(vin, vout, vint) + fileName  + " > "  + spiceFileName
         code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
@@ -647,6 +648,26 @@ def do_trans_tau(vin, vout, startName='trans', doEval=True, vint=0):
 
     else:
         return [0,0]
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    
+def get_time_of_val (time, vals, goal):
+    
+    if vals[0] < goal:
+        mode = 'u'
+    else:
+        mode = 'd'
+
+    for i in range(len(time)):
+        if mode == 'u' and (vals[i] > goal) :
+            ratio = (goal - vals[i-1]) / (vals[i] - vals[i-1])
+            return (time[i-1] + (time[i] - time[i-1])*ratio)
+               
+        elif mode == 'd' and (vals[i] < goal) :
+            ratio = (goal - vals[i-1]) / (vals[i] - vals[i-1])
+            return (time[i-1] + (time[i] - time[i-1])*ratio)
+
+    return -1
     
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1514,7 +1535,7 @@ def get_loop_characteristic(circuit):
         
         spiceFileName = SPICE_FOLDER + DIR_NAME + 'ctrl_%s_%s.sp'%(stringVin, stringVout)
 
-        if not os.path.isfile(spiceFileName[:-3]+'.aaa') :
+        if not os.path.isfile(spiceFileName[:-3]+'.ac0') :
         
             cmd = "sed -e 's/<sed>vin<sed>/%s/' -e 's/<sed>vout<sed>/%s/' "\
                 %(vin, vout) + fileName  + " > "  + spiceFileName
@@ -1590,17 +1611,18 @@ def get_loop_characteristic(circuit):
 
         f.close()     
 
-    print_info("starting controller characterization")
-    cmd = "matlab -r 'controller_polezero '%s' '%s'; quit' -nodisplay"\
-            %(DATA_FOLDER + DIR_NAME, DATA_FOLDER + DIR_NAME)
-    code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
+    # print_info("starting controller characterization")
+    # cmd = "matlab -r 'controller_polezero '%s' '%s'; quit' -nodisplay"\
+    #         %(DATA_FOLDER + DIR_NAME, DATA_FOLDER + DIR_NAME)
+    # code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
 
-    if (code != 0):
-        print_error("matlab failed")
-        return
+    # if (code != 0):
+    #     print_error("matlab failed")
+    #     return
 
     print_info("characterizing loop done")
-        
+
+   
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 def evaluate_meta(circuit):
@@ -1620,14 +1642,15 @@ def evaluate_meta(circuit):
         get_meta_trans(circuit)
     metaTrans = read_csv(fileName)
 
-    fileName = DATA_FOLDER + DIR_NAME + 'invMetaTrans.csv'
+#    fileName = DATA_FOLDER + DIR_NAME + 'invMetaTrans.csv'
+    fileName = DATA_FOLDER + DIR_NAME + 'metaTrans.csv'
     if not os.path.isfile(fileName):
         get_inv_meta_trans(circuit)
     invMetaTrans = read_csv(fileName)
 
     fileName = DATA_FOLDER + DIR_NAME + 'metaDC.csv'
     if not os.path.isfile(fileName):
-        get_inv_meta_dc(circuit)
+        get_meta_dc(circuit)
     invMetaDC = read_csv(fileName)
     
     #-----------------------------------------------------------------
@@ -2105,7 +2128,7 @@ def get_resolution_time (vin, vout, runTime):
         runTime *= 2
         print("runTime had to be increased to " + str(runTime))
 
-
+      
 #********************************************************************************
 
 def extract_from_lis(fileName, searchString):
@@ -2119,6 +2142,245 @@ def extract_from_lis(fileName, searchString):
         return float( text[idx+1] ) 
     except:
         return -1
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+def get_tau_tres_map(circuit):
+
+    print_info("starting determination of a map of tau and tres")
+    
+    meta = read_meta(DATA_FOLDER + DIR_NAME + 'meta.csv')
+
+    stepCount = 91
+    tauData = [[],[],[]]
+    tresData = [[],[],[]]
+    start_time = time.time()
+    
+    #-----------------------------------------------------------------
+    
+    # get lower value of metastable region
+    limits = [int(i) for i in meta[0]]
+    meta = meta[1:]
+    #supply voltage
+    VDD = meta[-1][0]
+
+    tauData[0] = [meta[idx][0] for idx in range(len(meta))]
+    tauData[1] = np.linspace(0, VDD, stepCount)
+
+    tresData[0] = [meta[idx][0] for idx in range(len(meta))]
+    tresData[1] = np.linspace(0, VDD, stepCount)
+    
+#    runTime = 1000 #ps
+    maxTau = 0
+    maxTres = 0
+
+    run_simulation_tau_tres_map.runTime = 1000
+    determine_tau_tres.VDD = VDD
+    determine_tau_tres.voutRange = tauData[1]
+    
+    #-----------------------------------------------------------------
+    
+    for idxIn, vin in enumerate(tauData[0]):
+
+        tau = [1e20]*len(tauData[1])
+        tres = [-1]*len(tresData[1])        
+
+        if len(meta[idxIn])==2 :
+            # outside metastable region
+            if meta[idxIn][1] < VDD/2:
+
+                [tau, tres] = determine_tau_tres (vin, VDD, 'd', tau, tres)
+                
+            else:
+                [tau, tres] = determine_tau_tres (vin, 0, 'u', tau, tres)                
+                
+        else:
+            # inside metastable region
+           
+            idxOut = 0
+            while tauData[1][idxOut] < meta[idxIn][2]:
+                idxOut += 1
+
+            # choose start value slightly off metastable to control resolution direction
+            vout =  tauData[1][idxOut] + (meta[idxIn][2]-tauData[1][idxOut])*1/10
+            startIdx = idxOut
+
+            [tau, tres] = determine_tau_tres (vin, vout, 'u', tau, tres)
+            
+            idxOut = startIdx
+                    
+            while tauData[1][idxOut] > meta[idxIn][2]:
+                idxOut -= 1
+
+            vout =  tauData[1][idxOut] + (meta[idxIn][2]-tauData[1][idxOut])*1/10
+            [tau, tres] = determine_tau_tres (vin, vout, 'd', tau, tres)
+
+        tauData[2].append(tau)
+        tresData[2].append(tres)
+        if max(tres) > maxTres:
+            maxTres = max(tres)
+        
+        for i in tauData[2][-1]:
+            if abs(i) < 1e20 and abs(i) > maxTau:
+                maxTau = abs(i)
+
+    #-----------------------------------------------------------------
+
+    # little more than value 2 on a logarithmic scale
+    scaleTau = maxTau / 200
+    scaleTres = maxTres / 200
+    
+    # scale results and remove invalid results
+    for idxCol in range(len(tauData[2])):
+
+        idx = len(tauData[1])/2
+        while idx < len(tauData[2][idxCol]):
+            
+            if abs(tauData[2][idxCol][idx]) > 1e19:
+                tauData[2][idxCol][idx] = tauData[2][idxCol][idx-1]
+
+            tauData[2][idxCol][idx] = scale_tau_tres_val (tauData[2][idxCol][idx], scaleTau)
+            tresData[2][idxCol][idx] = scale_tau_tres_val (tresData[2][idxCol][idx], scaleTres)
+            
+            idx += 1
+
+        idx = len(tauData[1])/2 -1
+        while idx > -1:
+            
+            if abs(tauData[2][idxCol][idx]) > 1e19:
+                tauData[2][idxCol][idx] = tauData[2][idxCol][idx+1]
+
+            tauData[2][idxCol][idx] = scale_tau_tres_val (tauData[2][idxCol][idx], scaleTau)
+            tresData[2][idxCol][idx] = scale_tau_tres_val (tresData[2][idxCol][idx], scaleTres)
+            
+            idx -= 1
+                
+    #-----------------------------------------------------------------
+
+    print_info("get_tau_tres_map took %s seconds"%(time.time()-start_time))
+
+    write_pgfplots_2D_nan(tauData, 'tauMap', 'vin vout tau\n');
+    write_pgfplots_2D_nan(tresData, 'tresMap', 'vin vout tres\n');
+    
+    print_info("determination map of tau and tres done")
+
+#********************************************************************************
+
+def scale_tau_tres_val (value, scale):
+
+    if value < 0:
+        value = - np.log10(abs(value/scale)+1)
+    else :
+        value = np.log10( value/scale+1)
+
+    return value
+
+#********************************************************************************
+
+def determine_tau_tres (vin, vout, direction, tau, tres):
+
+    startName = 'transTauTresMap'
+
+    data = run_simulation_tau_tres_map(vin, vout, determine_tau_tres.VDD)
+    logDVoutTrace = [np.log(abs(j)) for j in data[2]]
+    
+    if direction == 'd':
+
+        tresFinalTime = get_time_of_val(data[0], data[1], 0.1*determine_tau_tres.VDD)
+        
+        idxOut = len(tau)-1
+        while determine_tau_tres.voutRange[idxOut] >= data[1][0]:
+            idxOut -= 1
+
+        for idxTime in range(1,len(data[0])-1):
+            if data[1][idxTime] > determine_tau_tres.voutRange[idxOut]:
+                continue
+
+            tau[idxOut] = (logDVoutTrace[idxTime+1]-logDVoutTrace[idxTime-1])/ \
+                (data[0][idxTime+1]-data[0][idxTime-1])
+
+            # < -1 if goal value already crossed
+            tres[idxOut] = tresFinalTime - data[0][idxTime]
+
+            if idxOut == 0:
+                break
+            else:
+                idxOut -= 1
+
+    else:
+        tresFinalTime = get_time_of_val(data[0], data[1], 0.9*determine_tau_tres.VDD)
+        
+        idxOut = 0
+        while determine_tau_tres.voutRange[idxOut] <= data[1][0]:
+            idxOut += 1
+
+        for idxTime in range(1,len(data[0])-1):
+            if data[1][idxTime] < determine_tau_tres.voutRange[idxOut]:
+                continue
+
+            tau[idxOut] = (logDVoutTrace[idxTime+1]-logDVoutTrace[idxTime-1])/ \
+                (data[0][idxTime+1]-data[0][idxTime-1])
+
+            # < -1 if goal value already crossed
+            tres[idxOut] = tresFinalTime - data[0][idxTime]
+            
+            if idxOut == len(tau)-1:
+                break
+            else:
+                idxOut += 1
+        
+    return [tau, tres]
+
+#********************************************************************************
+
+def run_simulation_tau_tres_map (vin, vout, VDD):
+
+    print_info("starting do_simulation_tau_map for vin=%s and vout=%s"%(vin, vout))
+    
+    startName = 'transTauTresMap'
+    fileName = CIRCUIT_FOLDER + circuit + '/' + startName + '.sp'
+
+    # try to reduce the run time
+    run_simulation_tau_tres_map.runTime /= 2
+    
+    stringVin = ("%.7f"%vin).replace('.','')
+    stringVout = ("%.7f"%vout).replace('.','')
+    spiceFileName = SPICE_FOLDER + DIR_NAME + startName + '_%s_%s.sp'%(stringVin, stringVout)
+
+    while True :
+
+        # uncomment next line if results are already fully available
+        # recommended if only the analysis was altered
+#        if not os.path.isfile(spiceFileName[:-3]+'.tr0'):
+        if not os.path.isfile(spiceFileName[:-3]+'.aaa'):
+            cmd = "sed -e 's/<sed>in<sed>/%s/' -e 's/<sed>out<sed>/%s/' -e 's/<sed>runTime<sed>/%s/' "\
+                    %(vin, vout, run_simulation_tau_tres_map.runTime) + fileName  + " > "  + spiceFileName
+            code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
+
+            if (code != 0):
+                print_error("sed failed")
+                return
+
+            cmd = "hspice -i %s -o %s >> hspice_log 2>&1"%(spiceFileName[:-3], spiceFileName[:-3])
+    #        cmd = "spectre +mt +spp -format nutbin -outdir " + SPICE_FOLDER + DIR_NAME[:-1] + " =log " + spiceFileName[:-3] + ".log " + spiceFileName
+            code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
+
+            if (code != 0):
+                print_error("hspice failed")
+                return
+
+
+        data = read_hspice(spiceFileName[:-3]+'.tr0', 4)
+        if (data[1][0] < data[1][-1]) and data[1][-1] > VDD*0.95:
+            break
+
+        if (data[1][0] > data[1][-1]) and data[1][-1] < VDD*0.05:
+            break
+        
+        run_simulation_tau_tres_map.runTime *= 2
+        print("runTime had to be increased to " + str(run_simulation_tau_tres_map.runTime))
+
+    return data
     
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -2218,6 +2480,15 @@ def print_usage():
 
 if __name__ == '__main__':
 
+    # zeros=[3,4]
+    # poles=[5,6]
+    
+    # G = signal.TransferFunction(zeros, poles)
+    # _, V = signal.freqz(G, worN=[0])
+    # G=-(1/V)*G
+
+    # sys.exit()
+    
     if len(sys.argv) < 4 or len(sys.argv) > 5:
         print_usage()
         sys.exit()
@@ -2260,14 +2531,21 @@ if __name__ == '__main__':
         get_loop_characteristic(circuit)
     elif (mode == "eval"):
         evaluate_meta(circuit)
+    elif (mode == "tau_tres_map"):
+        get_tau_tres_map(circuit)        
     elif (mode == "all"):
         get_meta(circuit)
         get_Iout(circuit)
         get_meta_trans(circuit)
+        match_static_trans(circuit)
         get_meta_Iout(circuit)
-        get_inv_meta_dc(circuit)
+        get_tau(circuit)
+        get_loop_amplification(circuit)
+        get_meta_dc(circuit)
+        get_loop_characteristic(circuit)
         get_inv_meta_trans(circuit)
         evaluate_meta(circuit)
+        get_tres(circuit)
     elif (mode == "clean"):
         clean()
     else:

@@ -42,7 +42,7 @@ XN2 21 1 4 0 nmos
 XN3 5 22 4 0 nmos
 
 .PROBE TRAN V(22)
-.IC 1=inVal 22=outVal
+.IC 22=outVal
 .MEASURE TRAN tresu TRIG AT=0ps TARG V(21) VAL=supp09 RISE=LAST
 .MEASURE TRAN tresd TRIG AT=0ps TARG V(21) VAL=supp01 FALL=LAST
 .TRAN 1ps runTime
