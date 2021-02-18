@@ -1,4 +1,4 @@
-Transient simulation of 8T controllable hysteresis Schmitt Trigger
+Simulate hysteresis of standard 6T schmitt trigger
 *
 * Copyright 2019 Juergen Maier
 *
@@ -11,8 +11,8 @@ Transient simulation of 8T controllable hysteresis Schmitt Trigger
 * author: Juergen Maier
 * mail: juergen.maier@tuwien.ac.at
 
-.PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V runTime=<sed>runTime<sed>ps
-.PARAM step='runTime/4000'
+.PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
+.PARAM simTime=2ps
 
 .TEMP 25
 .OPTION
@@ -23,29 +23,29 @@ Transient simulation of 8T controllable hysteresis Schmitt Trigger
 + PROBE
 + BRIEF
 + ACCURATE
-+ ABSVAR=0.05
++ ABSVAR=0.01
 + DELMAX=100fs
 + OPTLST = 1
 
 .include technology
+.include parameters.sp
 
-VCC 5 0 supp
-VIN 1 0 inVal
-VB 9 0 vbVal
-VM 21 22 0
+VIN IN 0 inVal
+VR R 0 ref
+VSH SUHA 0 sh
 
-XP1 3 1 5 5 pmos
-XP2 21 1 3 5 pmos
-XP3 6 22 3 5 pmos
-XP4 0 9 6 5 pmos
+E OP SUHA IN 3 opamp_amplification MAX=sh MIN=-sh
 
-XN1 4 1 0 0 nmos
-XN2 21 1 4 0 nmos
-XN3 7 22 4 0 nmos
-XN4 5 9 7 0 nmos
+R0 OP OUT R_0
+C0 OUT 0 C_0
 
-.PROBE TRAN V(22) dtOut=deriv("V(22)") I(VM)
-.IC 22=outVal
-.TRAN step runTime
+RA OUT 3 R_A
+RB 3 R R_B
+
+.MEASURE startVal FIND V(OUT) AT=0ps
+.MEASURE stopVal FIND V(OUT) AT=simTime
+.MEASURE diff PARAM='stopVal-startVal'
+.IC IN=inVal OUT=outVal
+.TRAN 1ps simTime
 
 .END

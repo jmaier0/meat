@@ -46,7 +46,7 @@ E OP SUHA IN 3 opamp_amplification MAX=sh MIN=-sh
 R0 OP OUT R_0
 C0 OUT_FB 0 C_0
 
-RA OUT_FB 3 R_A
+RA OUT 3 R_A
 RB 3 R R_B
 
 .TRAN 1ps 1ns 

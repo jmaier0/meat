@@ -12,9 +12,9 @@ Simulate hysteresis of standard 6T schmitt trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
-.PARAM simTime='3000ps*<sed>mult<sed>'
-.PARAM P=50
-*P=<sed>P<sed>
+.PARAM simTime=1us
+*.PARAM P=50
+.PARAM P=<sed>P<sed>
 *PARAM D=0 I=0
 
 .TEMP 25
@@ -28,7 +28,7 @@ Simulate hysteresis of standard 6T schmitt trigger
 + BRIEF
 + ACCURATE
 + ABSVAR=0.05
-+ DELMAX=100fs
++ DELMAX=500ps
 + OPTLST = 1
 
 .include technology
@@ -39,7 +39,7 @@ VIN IN 0 inVal
 VR R 0 ref
 VSH SUHA 0 sh
 
-Vmeas OUT_FB OUT
+Vmeas OUT OUT_FB
 
 E OP SUHA IN 3 opamp_amplification MAX=sh MIN=-sh
 
@@ -50,7 +50,7 @@ RA OUT 3 R_A
 RB 3 R R_B
 
 * Proportional
-FP OUT 0 Vmeas P
+FP OUT_FB 0 Vmeas P
 
 * Integral
 *xint in integv  integrator
@@ -63,6 +63,6 @@ FP OUT 0 Vmeas P
 .MEAS TRAN finalVal FIND V(OUT) AT=simTime
 .PROBE TRAN V(OUT) I(Vmeas) I(FP)
 .IC OUT=outVal
-.TRAN 200fs simTime
+.TRAN 1ns simTime
 
 .END

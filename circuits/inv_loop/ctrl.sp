@@ -40,7 +40,7 @@ VCC VDD 0 supp
 VIN IN 0 dc=inVal
 IL OUT 0 pulse (0 jumpVal 0ps 0ps 0ps 20ns 100s) AC 1 0
 
-Vmeas OUT FF_OUT 0
+Vmeas OUT FF_OUT DC 0 AC 0 0
 
 *forward inverter 1
 XP1 INT IN VDD VDD pmos
@@ -51,8 +51,10 @@ XP2 FF_OUT INT VDD VDD pmos
 XN2 FF_OUT INT 0 0 nmos
 
 *backward inverter
-XP3 INT OUT VDD VDD pmos_weak
-XN3 INT OUT 0 0 nmos_weak
+XP3 INT FF_OUT VDD VDD pmos_weak
+XN3 INT FF_OUT 0 0 nmos_weak
+
+CL OUT 0 50f
 
 .TRAN 1ps 1ns 
 .AC DEC 10 1 10000G

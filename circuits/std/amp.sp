@@ -30,11 +30,11 @@ determining gain of storage loop in standard 6T Schmitt Trigger
 
 .include technology
 
-VCC 5 0 supp
-VIN 1 0 inVal
-VLSTB 2 20 dc=0
-*VLSTB3 30 3 dc=0
-*VLSTB4 40 4 dc=0
+VCC 5 0 supp ac 0 0
+VIN 1 0 inVal ac 0 0
+IL 20 0 dc 0 AC 1 0
+
+Vmeas 20 2 dc 0 ac 0 0
 
 XP1 3 1 5 5 pmos
 XP2 2 1 3 5 pmos
@@ -44,20 +44,65 @@ XN1 4 1 0 0 nmos
 XN2 2 1 4 0 nmos
 XN3 5 20 4 0 nmos
 
-.OP vol
-.NODESET 2=outVal
+.IC 2=outVal
 .AC DEC 10 1 10000G
-.lstb mode=single vsource=vlstb
-*.lstb mode=comm vsource=vlstb3,vlstb4
-.probe ac lstb(db) lstb(p)
+.probe ac idb(vmeas) ip(vmeas)
+.pz I(Vmeas) IL
 
-.measure LSTB unity_freq unity_gain_freq
-.measure LSTB gain loop_gain_at_minifreq
-.measure AC maxGain FIND lstb(db) AT=10
-*.measure AC cutoff_freq trig lstb(db) val=maxGain targ lstb(db) val='maxGain-3'
-.measure AC cutoff_freq trig at=0 targ lstb(db) val='maxGain-3' FALL=LAST
+.measure AC maxGain FIND idb(vmeas) AT=1
+.measure AC cutoff_freq trig at=0 targ idb(vmeas) val='maxGain-20*log10(sqrt(2))' FALL=LAST
 
-*.measure ac myfreq FIND lstb(M) AT=10meg
-*.measure ac maxMag max LSTB(r)
+
+
+* VCC 5 0 supp
+* VIN 1 0 inVal
+* VLSTB 2 20 dc=0
+
+* XP1 3 1 5 5 pmos
+* XP2 2 1 3 5 pmos
+* XP3 0 20 3 5 pmos
+
+* XN1 4 1 0 0 nmos
+* XN2 2 1 4 0 nmos
+* XN3 5 20 4 0 nmos
+
+* .OP vol
+* .NODESET 2=outVal
+* .AC DEC 10 1 10000G
+* .lstb mode=single vsource=vlstb
+* *.lstb mode=comm vsource=vlstb3,vlstb4
+* .probe ac lstb(db) lstb(p)
+
+* .measure LSTB unity_freq unity_gain_freq
+* .measure LSTB gain loop_gain_at_minifreq
+* .measure AC maxGain FIND lstb(db) AT=10
+* *.measure AC cutoff_freq trig lstb(db) val=maxGain targ lstb(db) val='maxGain-3'
+* .measure AC cutoff_freq trig at=0 targ lstb(db) val='maxGain-3' FALL=LAST
+
+* *.measure ac myfreq FIND lstb(M) AT=10meg
+* *.measure ac maxMag max LSTB(r)
+
+
+
+* VCC 5 0 supp ac 0
+* VIN 1 0 inVal ac 0
+* VCA 2 20 dc=0 ac 1 0
+
+* XP1 3 1 5 5 pmos
+* XP2 2 1 3 5 pmos
+* XP3 0 20 3 5 pmos
+
+* XN1 4 1 0 0 nmos
+* XN2 2 1 4 0 nmos
+* XN3 5 20 4 0 nmos
+
+* .OP vol
+* .NODESET 2=outVal
+* .AC DEC 100 1 10000G
+* .probe ac vdb(2) vp(2)
+
+* .measure AC maxGain FIND vdb(2) AT=1
+* .measure AC cutoff_freq trig at=0 targ vdb(2) val='maxGain-20*log10(sqrt(2))' FALL=LAST
+
 
 .END

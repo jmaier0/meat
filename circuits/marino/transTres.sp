@@ -33,21 +33,20 @@ Simulate hysteresis of standard 6T schmitt trigger
 VIN IN 0 inVal
 VR R 0 ref
 VSH SUHA 0 sh
-VM OUT OUT_FB 0
 
 E OP SUHA IN 3 opamp_amplification MAX=sh MIN=-sh
 
 R0 OP OUT R_0
-C0 OUT_FB 0 C_0
+C0 OUT 0 C_0
 
 RA OUT 3 R_A
 RB 3 R R_B
 
 
-.PROBE TRAN V(OUT) dtOut=deriv("V(OUT)") I(VM)
+.PROBE TRAN V(OUT)
 .IC OUT=outVal
-.MEASURE TRAN tresu TRIG AT=0ps TARG V(21) VAL=supp09 RISE=LAST
-.MEASURE TRAN tresd TRIG AT=0ps TARG V(21) VAL=supp01 FALL=LAST
+.MEASURE TRAN tresu TRIG AT=0ps TARG V(OUT) VAL=supp09 RISE=LAST
+.MEASURE TRAN tresd TRIG AT=0ps TARG V(OUT) VAL=supp01 FALL=LAST
 .TRAN 1ps runTime
 
 .END

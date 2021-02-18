@@ -12,7 +12,7 @@ Transient simulation of 8T controllable hysteresis Schmitt Trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
-.PARAM simTime=<sed>time<sed>ps
+.PARAM simTime=200ps
 
 .TEMP 25
 .OPTION

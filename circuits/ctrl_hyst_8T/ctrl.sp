@@ -39,15 +39,16 @@ VB B 0 dc vbVal ac 0 0
 IL OUT 0 pulse (0 jumpVal 0ps 0ps 0ps 20ns 100s) AC 1 0
 
 Vmeas OUT DRIVER dc 0 ac 0 0
+CL OUT 0 50f
 
 XP1 INTP IN VDD VDD pmos
 XP2 DRIVER IN INTP VDD pmos
-XP3 CP OUT INTP VDD pmos
+XP3 CP DRIVER INTP VDD pmos
 XP4 0 B CP VDD pmos
 
 XN1 INTN IN 0 0 nmos
 XN2 DRIVER IN INTN 0 nmos
-XN3 CN OUT INTN 0 nmos
+XN3 CN DRIVER INTN 0 nmos
 XN4 VDD B CN 0 nmos
 
 .TRAN 1ps 6ns 

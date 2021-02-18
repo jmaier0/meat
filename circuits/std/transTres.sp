@@ -11,7 +11,7 @@ Transient simulation of standard 6T Schmitt Trigger
 * author: Juergen Maier
 * mail: juergen.maier@tuwien.ac.at
 
-.PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V runTime=<sed>runTime<sed>ps
+.PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V runTime=<sed>runTime<sed>ns
 .PARAM supp09='0.9*supp' supp01='0.1*supp'
 
 .TEMP 25
@@ -24,27 +24,26 @@ Transient simulation of standard 6T Schmitt Trigger
 + BRIEF
 + ACCURATE
 + ABSVAR=0.05
-+ DELMAX=100fs
++ DELMAX=10ps
 + OPTLST = 1
 
 .include technology
 
 VCC 5 0 supp
 VIN 1 0 inVal
-VM 21 22 0
 
 XP1 3 1 5 5 pmos
-XP2 21 1 3 5 pmos
-XP3 0 22 3 5 pmos
+XP2 2 1 3 5 pmos
+XP3 0 2 3 5 pmos
 
 XN1 4 1 0 0 nmos
-XN2 21 1 4 0 nmos
-XN3 5 22 4 0 nmos
+XN2 2 1 4 0 nmos
+XN3 5 2 4 0 nmos
 
-.PROBE TRAN V(22)
-.IC 22=outVal
-.MEASURE TRAN tresu TRIG AT=0ps TARG V(21) VAL=supp09 RISE=LAST
-.MEASURE TRAN tresd TRIG AT=0ps TARG V(21) VAL=supp01 FALL=LAST
-.TRAN 1ps runTime
+.PROBE TRAN V(2)
+.IC 2=outVal
+.MEASURE TRAN tresu TRIG AT=0ps TARG V(2) VAL=supp09 RISE=LAST
+.MEASURE TRAN tresd TRIG AT=0ps TARG V(2) VAL=supp01 FALL=LAST
+.TRAN 100ps runTime
 
 .END

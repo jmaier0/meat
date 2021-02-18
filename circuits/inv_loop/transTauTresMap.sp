@@ -11,7 +11,7 @@ Transient simulation of inverter loop Schmitt Trigger
 * author: Juergen Maier
 * mail: juergen.maier@tuwien.ac.at
 
-.PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V runTime=<sed>runTime<sed>ps
+.PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V runTime='<sed>runTime<sed>ps'
 
 .TEMP 25
 .OPTION
@@ -23,7 +23,7 @@ Transient simulation of inverter loop Schmitt Trigger
 + BRIEF
 + ACCURATE
 + ABSVAR=0.05
-+ DELMAX=100fs
++ DELMAX=10fs
 + OPTLST = 1
 
 .include technology
@@ -46,6 +46,6 @@ XN3 3 22 0 0 nmos_weak
 
 .PROBE TRAN V(22) dtOut=deriv("V(22)") I(VM)
 .IC 22=outVal
-.TRAN 1ps runTime
+.TRAN 100fs runTime
 
 .END

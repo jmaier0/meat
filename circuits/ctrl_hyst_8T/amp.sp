@@ -25,13 +25,16 @@ determining gain of storage loop in 8T controllable hysteresis Schmitt Trigger
 + ABSVAR=0.05
 + DELMAX=100fs
 + OPTLST = 1
++ MEASDGT=10
 
 .include technology
 
 VCC 5 0 supp
 VIN 1 0 inVal
 VB 9 0 vbVal
-VLSTB 2 20 dc=0
+IL 20 0 DC 0 AC 1 0
+
+Vmeas 20 2 dc 0 ac 0 0
 
 XP1 3 1 5 5 pmos
 XP2 2 1 3 5 pmos
@@ -43,21 +46,12 @@ XN2 2 1 4 0 nmos
 XN3 7 20 4 0 nmos
 XN4 5 9 7 0 nmos
 
-.NODESET 2=outVal
+.IC 2=outVal
 .AC DEC 10 1 10000G
-.lstb mode=single vsource=vlstb
-.probe ac lstb(db) lstb(p)
+.probe ac idb(vmeas) ip(vmeas)
+.pz I(Vmeas) IL
 
-.measure LSTB unity_freq unity_gain_freq
-.measure LSTB gain loop_gain_at_minifreq
-.measure AC maxGain FIND lstb(db) AT=10
-*.measure AC cutoff_freq trig lstb(db) val=maxGain targ lstb(db) val='maxGain-3'
-.measure AC cutoff_freq trig at=0 targ lstb(db) val='maxGain-3' FALL=LAST
-
-*.measure ac myfreq FIND lstb(M) AT=10meg
-*.ac dec '10' '0' '10'
-*.lstb mode=single vsource=vlstb
-*.measure ac maxMag max LSTB(r)
-*.measure lstb gain loop_gain_at_minifreq
+.measure AC maxGain FIND idb(vmeas) AT=1
+.measure AC cutoff_freq trig at=0 targ idb(vmeas) val='maxGain-20*log10(sqrt(2))' FALL=LAST
 
 .END

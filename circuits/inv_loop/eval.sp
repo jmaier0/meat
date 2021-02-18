@@ -12,7 +12,7 @@ Transient simulation of inverter loop Schmitt Trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
-.PARAM simTime=<sed>time<sed>ps
+.PARAM simTime=20ps
 
 .TEMP 25
 .OPTION
@@ -24,7 +24,7 @@ Transient simulation of inverter loop Schmitt Trigger
 + BRIEF
 + ACCURATE
 + ABSVAR=0.05
-+ DELMAX=100fs
++ DELMAX=20fs
 + OPTLST = 1
 
 .include technology
@@ -48,6 +48,6 @@ XN3 3 2 0 0 nmos_weak
 .MEASURE stopVal FIND V(2) AT=simTime
 .MEASURE diff PARAM='stopVal-startVal'
 .IC 1=inVal 2=outVal
-.TRAN 1ps simTime
+.TRAN 100fs simTime
 
 .END

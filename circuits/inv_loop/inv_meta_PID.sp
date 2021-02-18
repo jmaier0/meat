@@ -12,8 +12,10 @@ Transient simulation of inverter loop Schmitt Trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
-.PARAM simTime='2000ps*<sed>mult<sed>'
-.PARAM P=<sed>P<sed>
+.PARAM simTime=10us
+*.PARAM P='(<sed>P<sed>-1)*0.02 +1'
+.PARAM P='<sed>P<sed>'
+*.PARAM P=1.001
 *PARAM D=0 I=0
 
 .TEMP 25
@@ -26,17 +28,21 @@ Transient simulation of inverter loop Schmitt Trigger
 + BRIEF
 + ACCURATE
 + ABSVAR=0.05
-+ DELMAX=100fs
++ ABSMOS=1e-12
++ ABSTOL=1e-12
++ DELMAX=1ns
 + OPTLST = 1
 + MEASDGT=10
 + RUNLVL=5
 
 .include technology
+.include common.sp
 
 VCC VDD 0 supp
 VIN IN 0 inVal
 
 Vmeas FF_OUT OUT 0
+CL OUT 0 50f
 
 *forward inverter 1
 XP1 INT IN VDD VDD pmos
@@ -47,8 +53,8 @@ XP2 FF_OUT INT VDD VDD pmos
 XN2 FF_OUT INT 0 0 nmos
 
 *backward inverter
-XP3 INT OUT VDD VDD pmos_weak
-XN3 INT OUT 0 0 nmos_weak
+XP3 INT FF_OUT VDD VDD pmos_weak
+XN3 INT FF_OUT 0 0 nmos_weak
 
 
 * Proportional
@@ -67,6 +73,6 @@ FP OUT 0 Vmeas P
 .MEAS TRAN finalVal FIND V(OUT) AT=simTime
 .PROBE TRAN V(OUT) I(Vmeas) I(FP)
 .IC OUT=outVal
-.TRAN 200fs simTime
+.TRAN 5ns simTime
 
 .END

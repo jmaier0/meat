@@ -30,7 +30,8 @@ determining gain of storage loop in inverter loop Schmitt Trigger
 
 VCC 5 0 supp
 VIN 1 0 dc=inVal
-VLSTB 2 20 dc=0
+IL 20 0 DC 0 AC 1 0
+Vmeas 20 2 0
 
 *forward inverter 1
 XP1 3 1 5 5 pmos
@@ -46,13 +47,10 @@ XN3 3 20 0 0 nmos_weak
 
 .IC 2=outVal
 .AC DEC 10 1 10000G
-.lstb mode=single vsource=vlstb
-.probe ac lstb(db) lstb(p)
+.probe ac idb(vmeas) ip(vmeas)
+.pz I(Vmeas) IL
 
-.measure LSTB unity_freq unity_gain_freq
-.measure LSTB gain loop_gain_at_minifreq
-.measure AC maxGain FIND lstb(db) AT=10
-*.measure AC cutoff_freq trig lstb(db) val=maxGain targ lstb(db) val='maxGain-3'
-.measure AC cutoff_freq trig at=0 targ lstb(db) val='maxGain-3' FALL=LAST
+.measure AC maxGain FIND idb(vmeas) AT=1
+.measure AC cutoff_freq trig at=0 targ idb(vmeas) val='maxGain-20*log10(sqrt(2))' FALL=LAST
 
 .END

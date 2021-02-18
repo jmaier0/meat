@@ -12,7 +12,7 @@ Transient simulation of 8T controllable hysteresis Schmitt Trigger
 * mail: juergen.maier@tuwien.ac.at
 
 .PARAM inVal=<sed>in<sed>V  outVal=<sed>out<sed>V
-.PARAM simTime='7000ps*<sed>mult<sed>'
+.PARAM simTime=8us
 .PARAM P=<sed>P<sed>
 *PARAM D=0 I=0
 
@@ -26,12 +26,13 @@ Transient simulation of 8T controllable hysteresis Schmitt Trigger
 + BRIEF
 + ACCURATE
 + ABSVAR=0.05
-+ DELMAX=100fs
++ DELMAX=500ps
 + OPTLST = 1
 + MEASDGT=10
 + RUNLVL=5
 
 .include technology
+.include common.sp
 
 VCC 5 0 supp
 VIN 1 0 inVal
@@ -48,11 +49,15 @@ XN3 7 2 4 0 nmos
 XN4 5 9 7 0 nmos
 
 Vmeas 2 8 0
-F1 8 0 Vmeas P
+CL 8 0 50f
+
+* Proportional
+FP 8 0 Vmeas P
 
 * Integral
-*xint in integv  integrator
-*GI 8 0 integv 0 I
+* HI in  0  Vmeas 1
+* xint in integv  integrator
+* GI 8 0 integv 0 I
 
 * Differential
 *xdiff in diffv  differentiator
@@ -60,7 +65,7 @@ F1 8 0 Vmeas P
 
 .MEAS TRAN finalVal FIND V(8) AT=simTime
 .PROBE TRAN V(8) I(Vmeas) I(FP)
-.IC 2=outVal
-.TRAN 200fs simTime
+.IC 8=outVal
+.TRAN 1ns simTime
 
 .END
