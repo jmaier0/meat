@@ -34,16 +34,18 @@ TECH_FOLDER='../technologies/'
 DIR_NAME=''
 SPICE_COMMAND='hspice'
 
-DVOUT_COUNT_VIN=900 # how many different input voltage values to use
+#DVOUT_COUNT_VIN=900 # how many different input voltage values to use
+DVOUT_COUNT_VIN=200 # how many different input voltage values to use
 #DVOUT_COUNT_VOUT=18000 # how many different output voltage values to use
 #DVOUT_COUNT_VIN=225 # how many different input voltage values to use
 #DVOUT_COUNT_VIN=45 # how many different input voltage values to use
-DVOUT_COUNT_VOUT=9000 # how many different output voltage values to use
+DVOUT_COUNT_VOUT=200 # how many different output voltage values to use
+#DVOUT_COUNT_VOUT=9000 # how many different output voltage values to use
 #DVOUT_COUNT_VOUT=100000 # how many different output voltage values to use
 HYSTERESIS_COUNT_MULT=1 # multiplicative factor how many more input voltage values
    # to use during the hysteresis
 
-DATA_NAMES = ['', 'v(OUT)']
+DATA_NAMES = ['', 'v(Q)']
    
 #********************************************************************************
 
@@ -270,7 +272,10 @@ def read_controller_parameters(fileName):
 
     for line in f.readlines():
         data['vin'].append( float(line.split('_')[1]) / 1e7 )
-        P = float( line.split('K_P_')[1].split('=')[1].split(',')[0])
+        try:
+            P = float( line.split('K_P_')[1].split('=')[1].split(',')[0])
+        except:
+            P = 2
 
         # set default value=2
         if P < 1:
@@ -595,7 +600,7 @@ def do_trans_tau(vin, vout, startName='trans', doEval=True, vint=0):
     #    deriv = calc_first_deriv_x(data[0], data[1], 5)
      #   data.append(deriv)
 
-        startIdx=15
+        startIdx=5
         dVoutTrace = data[2][startIdx:]
         timeTrace = data[0][startIdx:]
 
@@ -796,6 +801,7 @@ def get_hysteresis(name):
                 return
 
             cmd = "hspice -i %s -o %s >> hspice_log 2>&1"%(spiceFileName[:-3], spiceFileName[:-3])
+            #cmd = "spectre +mt +spp -format nutbin -outdir " + SPICE_FOLDER + DIR_NAME[:-1] + " =log " + spiceFileName[:-3] + ".log " + spiceFileName
             code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
 
             if (code != 0):
@@ -803,7 +809,8 @@ def get_hysteresis(name):
                 return
 
         data = read_hspice(spiceFileName[:-3]+'.sw0',2)
-
+#        data = read_spectre(spiceFileName[:-3]+'.raw',2)
+        
         # search first point where a jump is observed (at threshold)
         limit = -1
         for idx in range(1,len(data[1])):
@@ -929,7 +936,7 @@ def get_Iout(name):
     data = read_hspice_2D(spiceFileName[:-3]+'.sw0')
 
     write_csv_2D(data, 'Iout')
-    write_pgfplots_2D(data, 'Iout', 2, 100)
+    write_pgfplots_2D(data, 'Iout', 2, 1)
    
     print_info("finished plotting figures")
 
@@ -1487,7 +1494,7 @@ def get_first_pole(fileName):
 
         while float(parts[0]) <0:
             lineIdx += 1
-            if lineIdx = len(lines):
+            if lineIdx == len(lines):
                 return 0
             
             parts = lines[lineIdx].split(' '*9)
@@ -2265,10 +2272,14 @@ def get_tau_tres_map(circuit):
 
         tauData[2].append(tau)
         tresData[2].append(tres)
+
+
         if max(tres) > maxTres:
             maxTres = max(tres)
         
         for i in tauData[2][-1]:
+            if vin==0.285: # hack for inv_loop
+                continue
             if abs(i) < 1e20 and abs(i) > maxTau:
                 maxTau = abs(i)
                
@@ -2385,9 +2396,6 @@ def determine_tau_tres (vin, vout, direction, tau, tres):
                 
     else:
         tresFinalTime = get_time_of_val(data[0], data[1], 0.9*determine_tau_tres.VDD)
-        # if vin == 0.052 :
-        #     print("%%%%%%%")
-        #     print(tresFinalTime)
         
         idxOut = 0
         while determine_tau_tres.voutRange[idxOut] <= data[1][0]:
@@ -2438,8 +2446,8 @@ def run_simulation_tau_tres_map (vin, vout, VDD):
 
         # uncomment next line if results are already fully available
         # recommended if only the analysis was altered
-#        if not os.path.isfile(spiceFileName[:-3]+'.tr0'):
-        if not os.path.isfile(spiceFileName[:-3]+'.aaa'):
+        if not os.path.isfile(spiceFileName[:-3]+'.tr0'):
+#        if not os.path.isfile(spiceFileName[:-3]+'.aaa'):
             cmd = "sed -e 's/<sed>in<sed>/%s/' -e 's/<sed>out<sed>/%s/' -e 's/<sed>runTime<sed>/%s/' "\
                     %(vin, vout, run_simulation_tau_tres_map.runTime) + fileName  + " > "  + spiceFileName
             code = subprocess.call(cmd,shell = True ,  stderr=subprocess.STDOUT)
